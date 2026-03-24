@@ -1,5 +1,6 @@
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 export type Role = 'Developer' | 'PM' | 'Designer';
+export type PersonRole = Role | 'CTO' | 'COO';
 export type ProjectGroup = 'Active' | 'POC';
 export type ProjectStatus = 'In Dev' | 'Productization' | 'POC' | 'Pre-Productization' | 'Done';
 
@@ -47,16 +48,18 @@ export interface Project {
 
 export interface Person {
   name: string;
-  role: Role;
+  role: PersonRole;
   initials: string;
   color: string;
 }
 
 // ─── COLOURS ──────────────────────────────────────────────────────────────────
-export const ROLE_COLOR: Record<Role, string> = {
+export const ROLE_COLOR: Record<PersonRole, string> = {
   Developer: '#4f8ef7',
   PM: '#f7a24f',
   Designer: '#a24ff7',
+  CTO: '#06b6d4',
+  COO: '#6366f1',
 };
 
 export const STATUS_COLOR: Record<string, string> = {
@@ -232,9 +235,9 @@ export const PROJECTS: Project[] = [
 export const PERSONNEL: Person[] = [
   { name:'Eran Shchory',    role:'Developer', initials:'ES', color:'#4f8ef7' },
   { name:'Shir Bar Maoz',   role:'Developer', initials:'SB', color:'#3b82f6' },
-  { name:'Hai Morgenstern', role:'Developer', initials:'HM', color:'#06b6d4' },
+  { name:'Hai Morgenstern', role:'CTO',       initials:'HM', color:'#06b6d4' },
   { name:'Rudy Marciano',   role:'Developer', initials:'RM', color:'#8b5cf6' },
-  { name:'Arnon Meltser',   role:'Developer', initials:'AM', color:'#6366f1' },
+  { name:'Arnon Meltser',   role:'COO',       initials:'AM', color:'#6366f1' },
   { name:'Niv Matityahu',   role:'Developer', initials:'NM', color:'#0ea5e9' },
   { name:'Noga',            role:'Developer', initials:'NO', color:'#22c55e' },
   { name:'Tal',             role:'Developer', initials:'TA', color:'#f43f5e' },
