@@ -99,7 +99,7 @@ interface GanttViewProps {
 }
 
 export function GanttView({ cols, mode }: GanttViewProps) {
-  const COL_W = mode === 'weekly' ? 88 : 110;
+  const COL_W = mode === 'weekly' ? 88 : mode === 'quarterly' ? 140 : 110;
   const LABEL_W = 230;
 
   const sections = [

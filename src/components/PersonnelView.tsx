@@ -82,7 +82,7 @@ interface PersonnelViewProps {
 }
 
 export function PersonnelView({ cols, mode }: PersonnelViewProps) {
-  const COL_W = mode === 'weekly' ? 88 : 110;
+  const COL_W = mode === 'weekly' ? 88 : mode === 'quarterly' ? 140 : 110;
   const LABEL_W = 238;
 
   const gridStyle = {

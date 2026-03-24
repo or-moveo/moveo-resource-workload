@@ -21,6 +21,10 @@ export function som(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
+export function soq(d: Date): Date {
+  return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1);
+}
+
 export function eom(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
@@ -34,22 +38,33 @@ export function fmtMon(d: Date): string {
 }
 
 export function colEnd(col: Date, mode: string): Date {
-  return mode === 'weekly' ? addDays(col, 6) : eom(col);
+  if (mode === 'weekly') return addDays(col, 6);
+  if (mode === 'quarterly') return eom(new Date(col.getFullYear(), Math.floor(col.getMonth() / 3) * 3 + 2, 1));
+  return eom(col);
 }
 
 export function isToday(col: Date, today: Date, mode: string): boolean {
   if (mode === 'weekly') return col <= today && colEnd(col, mode) >= today;
+  if (mode === 'quarterly') return col.getFullYear() === today.getFullYear() && Math.floor(col.getMonth() / 3) === Math.floor(today.getMonth() / 3);
   return col.getMonth() === today.getMonth() && col.getFullYear() === today.getFullYear();
 }
 
 export function colLabel(col: Date, mode: string): string {
-  return mode === 'weekly' ? fmtShort(col) : fmtMon(col);
+  if (mode === 'weekly') return fmtShort(col);
+  if (mode === 'quarterly') return `Q${Math.floor(col.getMonth() / 3) + 1} '${String(col.getFullYear()).slice(2)}`;
+  return fmtMon(col);
 }
 
 export function getCols(anchor: Date, mode: string, ncols = 12): Date[] {
   const cols: Date[] = [];
   if (mode === 'weekly') {
     for (let i = 0; i < ncols; i++) cols.push(addDays(anchor, i * 7));
+  } else if (mode === 'quarterly') {
+    const base = soq(anchor);
+    for (let i = 0; i < ncols; i++) {
+      const totalMonths = base.getMonth() + i * 3;
+      cols.push(new Date(base.getFullYear() + Math.floor(totalMonths / 12), totalMonths % 12, 1));
+    }
   } else {
     const base = som(anchor);
     for (let i = 0; i < ncols; i++)

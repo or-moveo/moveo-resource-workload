@@ -6,7 +6,7 @@ import { GanttView } from '@/components/GanttView';
 import { PersonnelView } from '@/components/PersonnelView';
 import { OverviewView } from '@/components/OverviewView';
 import { PROJECTS, PERSONNEL, projColorMap } from '@/data';
-import { sow, som, addDays, getCols, colEnd, fmtShort, fmtMon, personHoursInCol } from '@/utils';
+import { sow, som, soq, addDays, getCols, colEnd, colLabel, fmtShort, fmtMon, personHoursInCol } from '@/utils';
 
 const TODAY = new Date(2026, 2, 22);
 const NCOLS = 12;
@@ -20,25 +20,28 @@ const TABS = [
 type TabValue = typeof TABS[number]['value'];
 
 export default function App() {
-  const [mode, setMode] = useState<'weekly' | 'monthly'>('weekly');
+  const [mode, setMode] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
   const [anchor, setAnchor] = useState<Date>(sow(TODAY));
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
 
-  const cols = useMemo(() => getCols(anchor, mode, NCOLS), [anchor, mode]);
+  const cols = useMemo(() => getCols(anchor, mode, mode === 'quarterly' ? 6 : NCOLS), [anchor, mode]);
 
   const periodLabel = useMemo(() => {
     const last = colEnd(cols[cols.length - 1], mode);
     if (mode === 'weekly') return `${fmtShort(cols[0])} – ${fmtShort(last)}`;
+    if (mode === 'quarterly') return `${colLabel(cols[0], 'quarterly')} – ${colLabel(cols[cols.length - 1], 'quarterly')}`;
     return `${fmtMon(cols[0])} – ${fmtMon(last)}`;
   }, [cols, mode]);
 
   function goBack() {
     if (mode === 'weekly') setAnchor(addDays(anchor, -7 * 4));
+    else if (mode === 'quarterly') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 4 * 3, 1));
     else setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 4, 1));
   }
 
   function goForward() {
     if (mode === 'weekly') setAnchor(addDays(anchor, 7 * 4));
+    else if (mode === 'quarterly') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 4 * 3, 1));
     else setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 4, 1));
   }
 
@@ -132,7 +135,7 @@ export default function App() {
                 Management Dashboard
               </div>
               <div className="text-[10px] text-slate-400 leading-none mt-0.5">
-                {mode === 'weekly' ? 'Weekly' : 'Monthly'} View
+                {mode === 'weekly' ? 'Weekly' : mode === 'quarterly' ? 'Quarterly' : 'Monthly'} View
               </div>
             </div>
           </div>
@@ -187,12 +190,13 @@ export default function App() {
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
                 <div className="flex border border-slate-200 rounded-lg overflow-hidden ml-1">
-                  {(['weekly', 'monthly'] as const).map(m => (
+                  {(['weekly', 'monthly', 'quarterly'] as const).map(m => (
                     <button
                       key={m}
                       onClick={() => {
                         setMode(m);
                         if (m === 'monthly') setAnchor(som(anchor));
+                        if (m === 'quarterly') setAnchor(soq(anchor));
                       }}
                       className={`px-2.5 py-1 text-[11px] font-semibold font-urbanist transition-all duration-150 ${
                         mode !== m ? 'bg-white text-slate-400 hover:text-slate-600' : ''
