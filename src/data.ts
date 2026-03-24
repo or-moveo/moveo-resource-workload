@@ -236,6 +236,8 @@ export const PERSONNEL: Person[] = [
   { name:'Rudy Marciano',   role:'Developer', initials:'RM', color:'#8b5cf6' },
   { name:'Arnon Meltser',   role:'Developer', initials:'AM', color:'#6366f1' },
   { name:'Niv Matityahu',   role:'Developer', initials:'NM', color:'#0ea5e9' },
+  { name:'Noga',            role:'Developer', initials:'NO', color:'#22c55e' },
+  { name:'Tal',             role:'Developer', initials:'TA', color:'#f43f5e' },
   { name:'Or Bruchim',      role:'PM',        initials:'OB', color:'#f7a24f' },
   { name:'Adar Shirazi',    role:'Designer',  initials:'AS', color:'#a24ff7' },
 ];
