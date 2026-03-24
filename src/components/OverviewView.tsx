@@ -205,9 +205,9 @@ function QuadrantGrid({ utilPct, staffPct }: { utilPct: number; staffPct: number
   ];
 
   const activeQ: QId =
-    utilPct >= 75 && staffPct >= 75 ? 'tr'
-    : utilPct >= 75                  ? 'tl'
-    : staffPct >= 75                 ? 'br'
+    utilPct >= 50 && staffPct >= 50 ? 'tr'
+    : utilPct >= 50                  ? 'tl'
+    : staffPct >= 50                 ? 'br'
     : 'bl';
 
   return (
@@ -290,9 +290,9 @@ export function OverviewView() {
     underresourced: { label: 'Under-resourced',   desc: 'Projects lack coverage and people have capacity — re-plan',        color: '#dc2626', symbol: '⊘' },
   };
   const qKey: QKey =
-    personnelUtilPct >= 75 && projStaffPct >= 75 ? 'excellent'
-    : personnelUtilPct >= 75                      ? 'hidden'
-    : projStaffPct >= 75                          ? 'surplus'
+    personnelUtilPct >= 50 && projStaffPct >= 50 ? 'excellent'
+    : personnelUtilPct >= 50                      ? 'hidden'
+    : projStaffPct >= 50                          ? 'surplus'
     : 'underresourced';
   const Q = qMap[qKey];
 
