@@ -3,6 +3,28 @@ export type Role = 'Developer' | 'PM' | 'Designer';
 export type ProjectGroup = 'Active' | 'POC';
 export type ProjectStatus = 'In Dev' | 'Productization' | 'POC' | 'Pre-Productization' | 'Done';
 
+export interface Holiday {
+  date: string;    // YYYY-MM-DD
+  name: string;    // Hebrew name (for tooltip)
+  nameEn: string;  // Short English label
+  closed: boolean; // true = סגור (office closed), false = פתוח (partial / regular)
+}
+
+// ─── SPRING 2026 HOLIDAYS ─────────────────────────────────────────────────────
+export const HOLIDAYS: Holiday[] = [
+  { date: '2026-04-01', name: 'ערב פסח',                        nameEn: 'Passover Eve',    closed: false },
+  { date: '2026-04-02', name: 'פסח',                             nameEn: 'Passover',        closed: true  },
+  { date: '2026-04-05', name: 'חול המועד פסח',                   nameEn: 'Hol HaMoed',      closed: false },
+  { date: '2026-04-06', name: 'חול המועד פסח',                   nameEn: 'Hol HaMoed',      closed: false },
+  { date: '2026-04-07', name: "ערב חג פסח ב'",                   nameEn: "Passover-2 Eve",  closed: false },
+  { date: '2026-04-08', name: "פסח ב'",                           nameEn: 'Passover 2',      closed: true  },
+  { date: '2026-04-14', name: 'יום הזיכרון לשואה ולגבורה',       nameEn: 'Holocaust Day',   closed: false },
+  { date: '2026-04-21', name: 'יום הזיכרון לחללי צה"ל',          nameEn: 'Memorial Day',    closed: false },
+  { date: '2026-04-22', name: 'יום העצמאות',                     nameEn: 'Independence',    closed: true  },
+  { date: '2026-05-21', name: 'ערב שבועות',                      nameEn: 'Shavuot Eve',     closed: false },
+  { date: '2026-05-22', name: 'שבועות',                           nameEn: 'Shavuot',         closed: true  },
+];
+
 export interface PersonnelEntry {
   name: string;
   role: Role;
@@ -61,8 +83,8 @@ export const PROJECTS: Project[] = [
     personnel:[
       {name:'Eran Shchory',  role:'Developer',pct:100,hours:40,subStart:'2026-03-08',subEnd:'2026-05-05'},
       {name:'Shir Bar Maoz', role:'Developer',pct:100,hours:40,subStart:'2026-03-08',subEnd:'2026-05-05'},
-      {name:'Rudy Marciano', role:'Developer',pct:30, hours:12,subStart:'2026-03-08',subEnd:'2026-05-05'},
-      {name:'Or Bruchim',    role:'PM',       pct:30, hours:12,subStart:'2026-03-08',subEnd:'2026-05-05'},
+      {name:'Rudy Marciano', role:'Developer',pct:40, hours:16,subStart:'2026-03-08',subEnd:'2026-05-05'},
+      {name:'Or Bruchim',    role:'PM',       pct:50, hours:20,subStart:'2026-03-08',subEnd:'2026-05-05'},
       {name:'Adar Shirazi',  role:'Designer', pct:50, hours:20,subStart:'2026-03-22',subEnd:'2026-04-30'},
     ]},
   { group:'Active', id:'haat', name:'HAAT', status:'Productization',
@@ -90,7 +112,7 @@ export const PROJECTS: Project[] = [
     start:'2026-03-18', end:'2026-04-01',
     required:{Developer:2,PM:6,Designer:0},
     personnel:[
-      {name:'Or Bruchim',    role:'PM',       pct:15,hours:6,subStart:'2026-03-18',subEnd:'2026-03-31'},
+      {name:'Or Bruchim',    role:'PM',       pct:25,hours:10,subStart:'2026-03-18',subEnd:'2026-03-31'},
       {name:'Arnon Meltser', role:'Developer',pct:5, hours:2,subStart:'2026-03-18',subEnd:'2026-03-31'},
     ]},
   { group:'Active', id:'trace', name:'Trace (Kultur) - MVP', status:'In Dev',
@@ -107,8 +129,8 @@ export const PROJECTS: Project[] = [
     start:null, end:null,
     required:{Developer:0,PM:0,Designer:0},
     personnel:[
-      {name:'Arnon Meltser',role:'Developer',pct:20,hours:8,subStart:'2026-02-15',subEnd:'2026-04-05'},
-      {name:'Rudy Marciano',role:'Developer',pct:5, hours:2,subStart:'2026-02-15',subEnd:'2026-04-05'},
+      {name:'Arnon Meltser', role:'Developer',pct:20,hours:8, subStart:'2026-02-15',subEnd:'2026-04-05'},
+      {name:'Niv Matityahu', role:'Developer',pct:30,hours:12,subStart:'2026-03-24',subEnd:'2026-04-05'},
     ]},
   { group:'Active', id:'hertz', name:'Hertz', status:'Pre-Productization',
     start:null, end:null,

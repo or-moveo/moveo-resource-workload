@@ -1,11 +1,24 @@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PROJECTS, ROLE_COLOR, STATUS_COLOR, type Project } from '@/data';
-import { barType, fmtShort, pd, isToday, colLabel, projActual } from '@/utils';
+import { PROJECTS, ROLE_COLOR, STATUS_COLOR, HOLIDAYS, type Project, type Holiday } from '@/data';
+import { barType, fmtShort, pd, isToday, colLabel, colEnd, projActual } from '@/utils';
 
 const TODAY = new Date(2026, 2, 22);
 
 const ROLES = ['Developer', 'PM', 'Designer'] as const;
+
+// ── Holiday helpers ────────────────────────────────────────────────────────────
+function getColHolidays(col: Date, mode: string): Holiday[] {
+  const end = colEnd(col, mode);
+  return HOLIDAYS.filter(h => {
+    const d = new Date(h.date + 'T00:00:00');
+    return d >= col && d <= end;
+  });
+}
+function dedupeHolidays(hs: Holiday[]): Holiday[] {
+  const seen = new Set<string>();
+  return hs.filter(h => { if (seen.has(h.nameEn)) return false; seen.add(h.nameEn); return true; });
+}
 
 function barGradient(proj: Project): string {
   const a = projActual(proj);
@@ -123,6 +136,70 @@ export function GanttView({ cols, mode }: GanttViewProps) {
               {colLabel(col, mode)}
             </div>
           ))}
+
+          {/* ── Holiday row ─────────────────────────────────────────────────── */}
+          <div
+            className="sticky left-0 z-[12] bg-white border-r border-b flex items-center px-3.5 min-h-[28px]"
+            style={{ top: 38, borderBottomColor: '#e2e8f0', borderRightColor: '#e2e8f0', boxShadow: '2px 0 4px rgba(0,0,0,0.04)' }}
+          >
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">🗓 Holidays</span>
+          </div>
+          {cols.map((col, i) => {
+            const hols = dedupeHolidays(getColHolidays(col, mode));
+            const hasClosed = hols.some(h => h.closed);
+            const bg = hols.length === 0 ? 'white' : hasClosed ? '#fff5f5' : '#fffbeb';
+            return (
+              <Tooltip key={`holg-${i}`}>
+                <TooltipTrigger asChild>
+                  <div
+                    className="z-[9] border-b border-r min-h-[28px] flex flex-col items-stretch justify-center gap-[2px] px-1 py-1 cursor-default"
+                    style={{ top: 38, position: 'sticky', background: bg, borderBottomColor: '#e2e8f0', borderRightColor: '#e2e8f0' }}
+                  >
+                    {hols.length === 0 && (
+                      <div className="text-center text-[8px] text-slate-200">—</div>
+                    )}
+                    {hols.slice(0, 2).map((h, j) => (
+                      <div
+                        key={j}
+                        className="flex items-center gap-[3px] rounded px-1"
+                        style={{ background: h.closed ? '#fee2e2' : '#fef9c3' }}
+                      >
+                        <span style={{ fontSize: 7, fontWeight: 800, color: h.closed ? '#dc2626' : '#d97706', flexShrink: 0 }}>
+                          {h.closed ? '✕' : '◎'}
+                        </span>
+                        <span style={{ fontSize: 7, fontWeight: 600, color: h.closed ? '#dc2626' : '#d97706', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {h.nameEn}
+                        </span>
+                      </div>
+                    ))}
+                    {hols.length > 2 && (
+                      <div className="text-center" style={{ fontSize: 7, color: '#94a3b8' }}>+{hols.length - 2} more</div>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                {hols.length > 0 && (
+                  <TooltipContent side="bottom" className="p-3" style={{ background: '#0f172a', border: '1px solid #1e293b', color: '#f1f5f9', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-urbanist mb-2">
+                      {mode === 'weekly' ? 'This Week' : 'This Month'}
+                    </div>
+                    <div className="space-y-1.5">
+                      {getColHolidays(col, mode).map((h, j) => (
+                        <div key={j} className="flex items-center gap-2">
+                          <span style={{ fontSize: 9, fontWeight: 800, color: h.closed ? '#f87171' : '#fbbf24' }}>
+                            {h.closed ? '✕' : '◎'}
+                          </span>
+                          <span className="text-xs flex-1">{h.name}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: h.closed ? '#dc262620' : '#d9780620', color: h.closed ? '#f87171' : '#fbbf24' }}>
+                            {h.closed ? 'Closed' : 'Open'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            );
+          })}
 
           {sections.map(sec => (
             <>

@@ -5,47 +5,34 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --foreground: 232 47% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 232 47% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
+    --popover-foreground: 232 47% 15%;
+    --primary: 232 63% 32%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --secondary: 220 13% 95%;
+    --secondary-foreground: 232 47% 15%;
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 13% 95%;
+    --accent-foreground: 232 47% 15%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.5rem;
-  }
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 232 63% 32%;
+    --radius: 0.625rem;
 
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    /* Moveo brand tokens */
+    --moveo-navy: #201f87;
+    --moveo-gradient-start: #355872;
+    --moveo-gradient-end: #7aaace;
+    --moveo-gradient: linear-gradient(135deg, #355872, #7aaace);
+    --moveo-bg: #f8fafc;
+    --shadow-card: -4px 3px 10px rgba(0, 0, 0, 0.08);
+    --shadow-card-hover: -6px 5px 16px rgba(0, 0, 0, 0.14);
   }
 }
 
@@ -55,5 +42,50 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Assistant', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--moveo-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Urbanist', 'Assistant', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-urbanist {
+    font-family: 'Urbanist', 'Assistant', sans-serif;
+  }
+  .font-assistant {
+    font-family: 'Assistant', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .card-premium {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  }
+  .card-premium:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  .gradient-text {
+    background: var(--moveo-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-bg {
+    background: var(--moveo-gradient);
+  }
+  .navy-underline {
+    position: relative;
+  }
+  .navy-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--moveo-navy);
+    border-radius: 1px;
   }
 }
