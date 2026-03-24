@@ -172,6 +172,10 @@ export const PROJECTS: Project[] = [
     start:null, end:null,
     required:{Developer:0,PM:0,Designer:0},
     personnel:[]},
+  { group:'Active', id:'live_tickets_analysis', name:'Live Tickets (Analysis)', status:'Pre-Productization',
+    start:null, end:null,
+    required:{Developer:0,PM:0,Designer:0},
+    personnel:[]},
 
   // ── POC ───────────────────────────────────────────────────────────────────
   { group:'POC', id:'terrorist', name:'Terrorist', status:'POC',
@@ -215,6 +219,10 @@ export const PROJECTS: Project[] = [
     required:{Developer:0,PM:0,Designer:0},
     personnel:[]},
   { group:'POC', id:'live_tickets_openclaw', name:'Live Tickets (Open Claw)', status:'POC',
+    start:null, end:null,
+    required:{Developer:0,PM:0,Designer:0},
+    personnel:[]},
+  { group:'POC', id:'johndeer_poc', name:'John Deer', status:'POC',
     start:null, end:null,
     required:{Developer:0,PM:0,Designer:0},
     personnel:[]},
