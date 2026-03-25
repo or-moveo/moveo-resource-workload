@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ChevronRight, BarChart2, Users, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BarChart2, Users, Target, Info } from 'lucide-react';
 import { GanttView } from '@/components/GanttView';
 import { PersonnelView } from '@/components/PersonnelView';
 import { OverviewView } from '@/components/OverviewView';
+import { GuideModal } from '@/components/GuideModal';
 import { PROJECTS, PERSONNEL, projColorMap } from '@/data';
 import { sow, som, soq, addDays, getCols, colEnd, colLabel, fmtShort, fmtMon, personHoursInCol } from '@/utils';
 
@@ -23,6 +24,7 @@ export default function App() {
   const [mode, setMode] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
   const [anchor, setAnchor] = useState<Date>(sow(TODAY));
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const cols = useMemo(() => getCols(anchor, mode, mode === 'quarterly' ? 6 : NCOLS), [anchor, mode]);
 
@@ -235,6 +237,18 @@ export default function App() {
       <footer className="bg-white border-t border-slate-200 px-5 py-2 flex items-center gap-4 flex-shrink-0">
         <Legend />
       </footer>
+
+      {/* ── Info button (fixed bottom-right) ── */}
+      <button
+        onClick={() => setGuideOpen(true)}
+        title="Data Guide"
+        className="fixed bottom-5 right-5 z-50 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-150 hover:scale-110 hover:shadow-xl"
+        style={{ background: 'var(--moveo-navy)' }}
+      >
+        <Info className="w-4.5 h-4.5 text-white" />
+      </button>
+
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }
