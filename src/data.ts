@@ -26,6 +26,13 @@ export const HOLIDAYS: Holiday[] = [
   { date: '2026-05-22', name: 'שבועות',                           nameEn: 'Shavuot',         closed: true  },
 ];
 
+export interface Vacation {
+  id: string;
+  start: string;    // YYYY-MM-DD
+  end: string;      // YYYY-MM-DD
+  reason?: string;
+}
+
 export interface PersonnelEntry {
   name: string;
   role: Role;

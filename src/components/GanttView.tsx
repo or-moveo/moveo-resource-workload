@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PROJECTS, ROLE_COLOR, STATUS_COLOR, HOLIDAYS, type Project, type Holiday } from '@/data';
+import { ROLE_COLOR, STATUS_COLOR, HOLIDAYS, type Project, type Holiday } from '@/data';
 import { barType, fmtShort, pd, isToday, colLabel, colEnd, projActual } from '@/utils';
 
 const TODAY = new Date(2026, 2, 22);
@@ -103,15 +103,17 @@ function ProjectTooltip({ proj }: { proj: Project }) {
 interface GanttViewProps {
   cols: Date[];
   mode: string;
+  projects: Project[];
+  onProjectClick: (projId: string) => void;
 }
 
-export function GanttView({ cols, mode }: GanttViewProps) {
+export function GanttView({ cols, mode, projects, onProjectClick }: GanttViewProps) {
   const COL_W = mode === 'weekly' ? 88 : mode === 'quarterly' ? 140 : 110;
   const LABEL_W = 230;
 
   const sections = [
-    { label: 'Active Projects', items: PROJECTS.filter(p => p.group === 'Active') },
-    { label: 'POC', items: PROJECTS.filter(p => p.group === 'POC') },
+    { label: 'Active Projects', items: projects.filter(p => p.group === 'Active') },
+    { label: 'POC', items: projects.filter(p => p.group === 'POC') },
   ];
 
   const gridStyle = {
@@ -134,9 +136,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
             <div
               key={i}
               className={`sticky top-0 z-10 border-b-2 border-r flex items-center justify-center min-h-[38px] text-[11px] font-semibold ${
-                isToday(col, TODAY, mode)
-                  ? 'bg-blue-50 text-blue-500 border-slate-200'
-                  : 'bg-slate-50 text-slate-500 border-slate-200'
+                isToday(col, TODAY, mode) ? 'bg-blue-50 text-blue-500 border-slate-200' : 'bg-slate-50 text-slate-500 border-slate-200'
               }`}
               style={{ borderBottomColor: '#d1d5db' }}
             >
@@ -144,7 +144,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
             </div>
           ))}
 
-          {/* ── Holiday row ─────────────────────────────────────────────────── */}
+          {/* Holiday row */}
           <div
             className="sticky left-0 z-[12] bg-white border-r border-b flex items-center px-3.5 min-h-[28px]"
             style={{ top: 38, borderBottomColor: '#e2e8f0', borderRightColor: '#e2e8f0', boxShadow: '2px 0 4px rgba(0,0,0,0.04)' }}
@@ -162,26 +162,16 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                     className="z-[9] border-b border-r min-h-[28px] flex flex-col items-stretch justify-center gap-[2px] px-1 py-1 cursor-default"
                     style={{ top: 38, position: 'sticky', background: bg, borderBottomColor: '#e2e8f0', borderRightColor: '#e2e8f0' }}
                   >
-                    {hols.length === 0 && (
-                      <div className="text-center text-[8px] text-slate-200">—</div>
-                    )}
+                    {hols.length === 0 && <div className="text-center text-[8px] text-slate-200">—</div>}
                     {hols.slice(0, 2).map((h, j) => (
-                      <div
-                        key={j}
-                        className="flex items-center gap-[3px] rounded px-1"
-                        style={{ background: h.closed ? '#fee2e2' : '#fef9c3' }}
-                      >
-                        <span style={{ fontSize: 7, fontWeight: 800, color: h.closed ? '#dc2626' : '#d97706', flexShrink: 0 }}>
-                          {h.closed ? '✕' : '◎'}
-                        </span>
+                      <div key={j} className="flex items-center gap-[3px] rounded px-1" style={{ background: h.closed ? '#fee2e2' : '#fef9c3' }}>
+                        <span style={{ fontSize: 7, fontWeight: 800, color: h.closed ? '#dc2626' : '#d97706', flexShrink: 0 }}>{h.closed ? '✕' : '◎'}</span>
                         <span style={{ fontSize: 7, fontWeight: 600, color: h.closed ? '#dc2626' : '#d97706', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {fmtDay(h.date)} · {h.nameEn}
                         </span>
                       </div>
                     ))}
-                    {hols.length > 2 && (
-                      <div className="text-center" style={{ fontSize: 7, color: '#94a3b8' }}>+{hols.length - 2} more</div>
-                    )}
+                    {hols.length > 2 && <div className="text-center" style={{ fontSize: 7, color: '#94a3b8' }}>+{hols.length - 2} more</div>}
                   </div>
                 </TooltipTrigger>
                 {hols.length > 0 && (
@@ -192,9 +182,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                     <div className="space-y-1.5">
                       {getColHolidays(col, mode).map((h, j) => (
                         <div key={j} className="flex items-center gap-2">
-                          <span style={{ fontSize: 9, fontWeight: 800, color: h.closed ? '#f87171' : '#fbbf24' }}>
-                            {h.closed ? '✕' : '◎'}
-                          </span>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: h.closed ? '#f87171' : '#fbbf24' }}>{h.closed ? '✕' : '◎'}</span>
                           <span className="text-[10px] text-slate-400 tabular-nums flex-shrink-0">{fmtDay(h.date)}</span>
                           <span className="text-xs flex-1">{h.name}</span>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: h.closed ? '#dc262620' : '#d9780620', color: h.closed ? '#f87171' : '#fbbf24' }}>
@@ -211,18 +199,13 @@ export function GanttView({ cols, mode }: GanttViewProps) {
 
           {sections.map(sec => (
             <React.Fragment key={sec.label}>
-              {/* Section header */}
-              <div
-                key={`sh-${sec.label}`}
-                className="sticky left-0 z-[12] bg-slate-100 border-r border-b flex items-center px-3.5 min-h-[28px]"
-              >
+              <div className="sticky left-0 z-[12] bg-slate-100 border-r border-b flex items-center px-3.5 min-h-[28px]">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{sec.label}</span>
               </div>
               {cols.map((_, i) => (
                 <div key={`sc-${sec.label}-${i}`} className="bg-slate-100 border-b border-r min-h-[28px]" />
               ))}
 
-              {/* Project rows */}
               {sec.items.map(proj => {
                 const a = projActual(proj);
                 const totalH = Object.values(a).reduce((s, v) => s + v, 0);
@@ -230,17 +213,16 @@ export function GanttView({ cols, mode }: GanttViewProps) {
 
                 return (
                   <React.Fragment key={proj.id}>
-                    {/* Label cell */}
+                    {/* Label — clickable */}
                     <div
-                      key={`lbl-${proj.id}`}
-                      className="sticky left-0 z-[11] bg-white border-r border-b flex items-center px-3.5 gap-2 min-h-[52px] min-w-[230px] hover:bg-slate-50 transition-colors"
+                      className="sticky left-0 z-[11] bg-white border-r border-b flex items-center px-3.5 gap-2 min-h-[52px] min-w-[230px] hover:bg-slate-50 transition-colors cursor-pointer group"
+                      onClick={() => onProjectClick(proj.id)}
                     >
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ background: STATUS_COLOR[proj.status] || '#94a3b8' }}
-                      />
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLOR[proj.status] || '#94a3b8' }} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold text-slate-900 truncate">{proj.name}</div>
+                        <div className="text-[12px] font-semibold text-slate-900 truncate group-hover:underline">
+                          {proj.name}
+                        </div>
                         <div className={`text-[10px] mt-0.5 ${unassigned ? 'text-red-500' : 'text-slate-400'}`}>
                           {unassigned ? '⚠ No allocation' : `${totalH}h/wk · ${proj.status}`}
                         </div>
@@ -251,15 +233,12 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                     {cols.map((col, ci) => {
                       const bt = barType(proj.start, proj.end, col, mode);
                       const todayCls = isToday(col, TODAY, mode);
-
                       return (
                         <Tooltip key={`bc-${proj.id}-${ci}`}>
                           <TooltipTrigger asChild>
                             <div
                               className={`relative border-b border-r min-h-[52px] cursor-default transition-colors ${
-                                todayCls
-                                  ? 'bg-blue-50/30 hover:bg-blue-50/60'
-                                  : 'hover:bg-indigo-50/30'
+                                todayCls ? 'bg-blue-50/30 hover:bg-blue-50/60' : 'hover:bg-indigo-50/30'
                               }`}
                             >
                               {bt && (
@@ -272,29 +251,22 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                                       ? {
                                           background: 'repeating-linear-gradient(45deg,#ef444466,#ef444466 3px,#fca5a533 3px,#fca5a533 6px)',
                                           border: '1.5px dashed #ef4444',
-                                          borderRadius:
-                                            bt === 'full' ? '5px' : bt === 'start' ? '5px 0 0 5px' : bt === 'end' ? '0 5px 5px 0' : '0',
+                                          borderRadius: bt === 'full' ? '5px' : bt === 'start' ? '5px 0 0 5px' : bt === 'end' ? '0 5px 5px 0' : '0',
                                         }
                                       : {
                                           background: barGradient(proj),
-                                          borderRadius:
-                                            bt === 'full' ? '5px' : bt === 'start' ? '5px 0 0 5px' : bt === 'end' ? '0 5px 5px 0' : '0',
+                                          borderRadius: bt === 'full' ? '5px' : bt === 'start' ? '5px 0 0 5px' : bt === 'end' ? '0 5px 5px 0' : '0',
                                         }),
                                   }}
                                 >
                                   {!unassigned && (bt === 'start' || bt === 'full') && (
-                                    <span className="text-[10px] font-semibold text-white px-1.5 whitespace-nowrap">
-                                      {proj.name}
-                                    </span>
+                                    <span className="text-[10px] font-semibold text-white px-1.5 whitespace-nowrap">{proj.name}</span>
                                   )}
                                 </div>
                               )}
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent
-                            side="right"
-                            className="bg-slate-900 text-slate-100 border-slate-700 p-3"
-                          >
+                          <TooltipContent side="right" className="bg-slate-900 text-slate-100 border-slate-700 p-3">
                             <ProjectTooltip proj={proj} />
                           </TooltipContent>
                         </Tooltip>

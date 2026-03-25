@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PROJECTS, PERSONNEL, CAPACITY, projColorMap, STATUS_COLOR, type Project } from '@/data';
+import { CAPACITY, projColorMap, STATUS_COLOR, type Project, type Person, type Vacation } from '@/data';
 import { sow, fmtShort, addDays, personHoursInCol, projActual } from '@/utils';
 
 const TODAY = new Date(2026, 2, 22);
@@ -255,20 +255,29 @@ function QuadrantGrid({ utilPct, staffPct }: { utilPct: number; staffPct: number
   );
 }
 
+interface OverviewViewProps {
+  projects: Project[];
+  personnel: Person[];
+  vacations: Record<string, Vacation[]>;
+  onProjectClick: (projId: string) => void;
+  onPersonClick: (personName: string) => void;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
-export function OverviewView() {
+export function OverviewView({ projects, personnel, vacations, onProjectClick, onPersonClick }: OverviewViewProps) {
   const col = sow(TODAY);
 
-  const personStats = PERSONNEL.map(p => {
-    const { total, breakdown } = personHoursInCol(p.name, col, 'weekly');
-    return { ...p, total, breakdown, utilPct: Math.round((total / CAPACITY) * 100) };
+  const personStats = personnel.map(p => {
+    const { total, breakdown, effectiveCapacity } = personHoursInCol(p.name, col, 'weekly', projects, vacations);
+    const cap = Math.max(effectiveCapacity, 1);
+    return { ...p, total, breakdown, effectiveCapacity: cap, utilPct: Math.round((total / cap) * 100) };
   });
-  const totalCapacity = PERSONNEL.length * CAPACITY;
+  const totalCapacity = personStats.reduce((s, p) => s + p.effectiveCapacity, 0);
   const totalAllocated = personStats.reduce((s, p) => s + p.total, 0);
-  const personnelUtilPct = Math.round((totalAllocated / totalCapacity) * 100);
+  const personnelUtilPct = Math.round((totalAllocated / Math.max(totalCapacity, 1)) * 100);
 
-  const signedProjs = PROJECTS.filter(p => p.group === 'Active');
-  const pocProjs    = PROJECTS.filter(p => p.group === 'POC');
+  const signedProjs = projects.filter(p => p.group === 'Active');
+  const pocProjs    = projects.filter(p => p.group === 'POC');
   const activeProjs = [...signedProjs, ...pocProjs];
 
   const staffedProjs = activeProjs.filter(p => p.personnel.length > 0);
@@ -368,7 +377,7 @@ export function OverviewView() {
                   })}
                 </div>
                 <div className="mt-3 pt-3 border-t border-slate-700 flex items-center justify-between text-[10px] text-slate-400">
-                  <span>Capacity: {PERSONNEL.length} people × {CAPACITY}h</span>
+                  <span>Capacity: {personnel.length} people × {CAPACITY}h</span>
                   <span className="font-bold" style={{ color: personnelUtilPct > 100 ? '#f87171' : '#94a3b8' }}>{totalAllocated}h / {totalCapacity}h</span>
                 </div>
               </div>
@@ -534,14 +543,14 @@ export function OverviewView() {
                 {personStats.sort((a, b) => b.utilPct - a.utilPct).map(p => {
                   const s = getStatus(p.utilPct);
                   return (
-                    <div key={p.name} className="flex items-center gap-2.5">
+                    <div key={p.name} className="flex items-center gap-2.5 cursor-pointer group" onClick={() => onPersonClick(p.name)}>
                       <div
                         className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
                         style={{ background: p.color, boxShadow: `0 0 0 2px white, 0 0 0 3px ${s.dot}40` }}
                       >
                         {p.initials}
                       </div>
-                      <div className="text-[12px] font-medium text-slate-700 w-28 truncate">{p.name}</div>
+                      <div className="text-[12px] font-medium text-slate-700 w-28 truncate group-hover:underline">{p.name}</div>
                       <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: s.barBg }}>
                         <div
                           className="h-full rounded-full transition-all duration-500"
@@ -595,7 +604,7 @@ export function OverviewView() {
                     return (
                       <Tooltip key={proj.id}>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center gap-2 py-1 rounded-md px-1 -mx-1 hover:bg-slate-50 cursor-default transition-colors">
+                          <div className="flex items-center gap-2 py-1 rounded-md px-1 -mx-1 hover:bg-slate-50 cursor-pointer transition-colors group" onClick={() => onProjectClick(proj.id)}>
                             <div className="w-2 h-2 rounded-full flex-shrink-0"
                               style={{ background: warn ? '#ef4444' : projColorMap[proj.id] }} />
                             <div className="text-[12px] text-slate-600 flex-1 truncate">{proj.name}</div>
@@ -636,7 +645,7 @@ export function OverviewView() {
                       return (
                         <Tooltip key={proj.id}>
                           <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2 py-1 rounded-md px-1 -mx-1 hover:bg-slate-50 cursor-default transition-colors">
+                            <div className="flex items-center gap-2 py-1 rounded-md px-1 -mx-1 hover:bg-slate-50 cursor-pointer transition-colors group" onClick={() => onProjectClick(proj.id)}>
                               <div className="w-2 h-2 rounded-full flex-shrink-0"
                                 style={{ background: warn ? '#d1d5db' : projColorMap[proj.id] }} />
                               <div className="text-[12px] text-slate-500 flex-1 truncate">{proj.name}</div>

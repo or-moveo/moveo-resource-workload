@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PERSONNEL, projColorMap, CAPACITY, HOLIDAYS, type Holiday } from '@/data';
+import { projColorMap, HOLIDAYS, type Holiday, type Person, type Project, type Vacation } from '@/data';
 import { personHoursInCol, makeDonut, fmtShort, colEnd, isToday, colLabel } from '@/utils';
 
 const TODAY = new Date(2026, 2, 22);
@@ -31,23 +31,35 @@ function getRowAccent(utilPct: number): { border: string; rowBg: string; statusC
   return              { border: '#e2e8f0', rowBg: '#ffffff', statusColor: '#94a3b8' };
 }
 
-// Compute per-person max utilization across all cols for left-border colouring
-function personMaxUtil(personName: string, cols: Date[], mode: string): number {
+function personMaxUtil(
+  personName: string,
+  cols: Date[],
+  mode: string,
+  projects: Project[],
+  vacations: Record<string, Vacation[]>
+): number {
   let max = 0;
   for (const col of cols) {
-    const { total } = personHoursInCol(personName, col, mode);
-    const pct = Math.round((total / CAPACITY) * 100);
+    const { total, effectiveCapacity } = personHoursInCol(personName, col, mode, projects, vacations);
+    const cap = Math.max(effectiveCapacity, 1);
+    const pct = Math.round((total / cap) * 100);
     if (pct > max) max = pct;
   }
   return max;
 }
 
-function PersonTooltip({ personName, role, col, mode }: { personName: string; role: string; col: Date; mode: string }) {
-  const { total, breakdown } = personHoursInCol(personName, col, mode);
-  const avail = Math.max(0, CAPACITY - total);
-  const utilPct = Math.round((total / CAPACITY) * 100);
+function PersonTooltip({
+  personName, role, col, mode, projects, vacations,
+}: {
+  personName: string; role: string; col: Date; mode: string;
+  projects: Project[]; vacations: Record<string, Vacation[]>;
+}) {
+  const { total, breakdown, effectiveCapacity, vacationDays } = personHoursInCol(personName, col, mode, projects, vacations);
+  const cap = Math.max(effectiveCapacity, 1);
+  const avail = Math.max(0, cap - total);
+  const utilPct = Math.round((total / cap) * 100);
   const week = fmtShort(col) + ' – ' + fmtShort(colEnd(col, mode));
-  const statusColor = total > CAPACITY ? '#ef4444' : total / CAPACITY > 0.9 ? '#f59e0b' : '#22c55e';
+  const statusColor = total > cap ? '#ef4444' : total / cap > 0.9 ? '#f59e0b' : '#22c55e';
 
   return (
     <div className="min-w-[220px]">
@@ -55,10 +67,16 @@ function PersonTooltip({ personName, role, col, mode }: { personName: string; ro
       <div className="text-xs text-slate-400 mb-3">
         {mode === 'weekly' ? week : colLabel(col, mode)} · {role}
       </div>
+      {vacationDays > 0 && (
+        <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md" style={{ background: '#fef9c3', border: '1px solid #fde68a' }}>
+          <span style={{ fontSize: 11 }}>🏖</span>
+          <span className="text-[11px] font-semibold text-amber-700">{vacationDays} vacation day{vacationDays > 1 ? 's' : ''} — capacity {effectiveCapacity}h</span>
+        </div>
+      )}
       <div className="flex items-center gap-2.5 mb-3">
         <div className="text-2xl font-black font-urbanist" style={{ color: statusColor }}>{utilPct}%</div>
         <div className="text-xs text-slate-400 leading-relaxed">
-          {total}h allocated / {CAPACITY}h capacity<br />
+          {total}h allocated / {effectiveCapacity}h capacity<br />
           {avail}h available
         </div>
       </div>
@@ -86,9 +104,13 @@ function PersonTooltip({ personName, role, col, mode }: { personName: string; ro
 interface PersonnelViewProps {
   cols: Date[];
   mode: string;
+  personnel: Person[];
+  projects: Project[];
+  vacations: Record<string, Vacation[]>;
+  onPersonClick: (personName: string) => void;
 }
 
-export function PersonnelView({ cols, mode }: PersonnelViewProps) {
+export function PersonnelView({ cols, mode, personnel, projects, vacations, onPersonClick }: PersonnelViewProps) {
   const COL_W = mode === 'weekly' ? 88 : mode === 'quarterly' ? 140 : 110;
   const LABEL_W = 238;
 
@@ -182,16 +204,15 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
           })}
 
           {/* Rows */}
-          {PERSONNEL.map(person => {
-            const maxUtil = personMaxUtil(person.name, cols, mode);
+          {personnel.map(person => {
+            const maxUtil = personMaxUtil(person.name, cols, mode, projects, vacations);
             const { border: rowBorderColor, rowBg } = getRowAccent(maxUtil);
 
             return (
               <React.Fragment key={person.name}>
-                {/* Person label cell */}
+                {/* Person label — clickable */}
                 <div
-                  key={`lbl-${person.name}`}
-                  className="sticky left-0 z-[11] border-r border-b flex items-center px-3.5 gap-2.5 min-h-[68px] min-w-[238px] transition-colors hover:brightness-[0.985]"
+                  className="sticky left-0 z-[11] border-r border-b flex items-center px-3.5 gap-2.5 min-h-[68px] min-w-[238px] transition-colors hover:brightness-[0.985] cursor-pointer group"
                   style={{
                     background: rowBg,
                     borderLeftWidth: 3,
@@ -201,6 +222,7 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                     borderRightColor: '#e2e8f0',
                     borderBottomColor: '#e2e8f0',
                   }}
+                  onClick={() => onPersonClick(person.name)}
                 >
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
@@ -209,19 +231,20 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                     {person.initials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-semibold text-slate-800 font-urbanist truncate">{person.name}</div>
+                    <div className="text-[12px] font-semibold text-slate-800 font-urbanist truncate group-hover:underline">{person.name}</div>
                     <div className="text-[10px] text-slate-400 mt-0.5 truncate">{person.role}</div>
                   </div>
                 </div>
 
                 {/* Workload cells */}
                 {cols.map((col, ci) => {
-                  const { total, breakdown } = personHoursInCol(person.name, col, mode);
-                  const utilPct = Math.round((total / CAPACITY) * 100);
+                  const { total, breakdown, effectiveCapacity, vacationDays } = personHoursInCol(person.name, col, mode, projects, vacations);
+                  const cap = Math.max(effectiveCapacity, 1);
+                  const utilPct = Math.round((total / cap) * 100);
                   const todayCls = isToday(col, TODAY, mode);
                   const pctColor =
-                    total > CAPACITY      ? '#ef4444'
-                    : total / CAPACITY > 0.9 ? '#f59e0b'
+                    total > cap           ? '#ef4444'
+                    : total / cap > 0.9   ? '#f59e0b'
                     : total > 0           ? '#22c55e'
                     : '#cbd5e1';
 
@@ -229,7 +252,7 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                     <Tooltip key={`wc-${person.name}-${ci}`}>
                       <TooltipTrigger asChild>
                         <div
-                          className="border-b border-r min-h-[68px] cursor-default flex items-center justify-center transition-colors"
+                          className="border-b border-r min-h-[68px] cursor-default flex flex-col items-center justify-center gap-0.5 transition-colors"
                           style={{
                             background: todayCls ? '#f0f4ff' : (rowBg !== '#ffffff' ? `${rowBg}cc` : 'white'),
                             borderBottomColor: '#e2e8f0',
@@ -239,27 +262,34 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = todayCls ? '#f0f4ff' : (rowBg !== '#ffffff' ? `${rowBg}cc` : 'white'); }}
                         >
                           <div className="relative w-[44px] h-[44px] flex-shrink-0">
-                            <div dangerouslySetInnerHTML={{ __html: makeDonut(total, breakdown, CAPACITY) }} />
+                            <div dangerouslySetInnerHTML={{ __html: makeDonut(total, breakdown, effectiveCapacity) }} />
                             <div
                               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] font-bold whitespace-nowrap font-urbanist"
                               style={{ color: pctColor }}
                             >
-                              {total > 0 ? `${utilPct}%` : '—'}
+                              {total > 0 ? `${utilPct}%` : vacationDays > 0 ? '🏖' : '—'}
                             </div>
                           </div>
+                          {vacationDays > 0 && (
+                            <div className="text-[7px] font-semibold text-amber-600 leading-none">
+                              {vacationDays}d off
+                            </div>
+                          )}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent
                         side="right"
                         className="p-3"
-                        style={{
-                          background: '#0f172a',
-                          border: '1px solid #1e293b',
-                          color: '#f1f5f9',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                        }}
+                        style={{ background: '#0f172a', border: '1px solid #1e293b', color: '#f1f5f9', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}
                       >
-                        <PersonTooltip personName={person.name} role={person.role} col={col} mode={mode} />
+                        <PersonTooltip
+                          personName={person.name}
+                          role={person.role}
+                          col={col}
+                          mode={mode}
+                          projects={projects}
+                          vacations={vacations}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   );

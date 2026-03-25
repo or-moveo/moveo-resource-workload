@@ -1,4 +1,4 @@
-import { PROJECTS, projColorMap, PROJ_COLORS } from './data';
+import { type Project, type Vacation, projColorMap, PROJ_COLORS, CAPACITY } from './data';
 
 // ─── DATE HELPERS ─────────────────────────────────────────────────────────────
 export function pd(s: string | null): Date | null {
@@ -96,6 +96,32 @@ export function barType(
   return 'mid';
 }
 
+// ─── VACATION HELPERS ─────────────────────────────────────────────────────────
+export function getVacationDaysInRange(
+  personName: string,
+  rangeStart: Date,
+  rangeEnd: Date,
+  vacations: Record<string, Vacation[]>
+): number {
+  const personVacs = vacations[personName] || [];
+  let days = 0;
+  for (const vac of personVacs) {
+    const vs = pd(vac.start);
+    const ve = pd(vac.end);
+    if (!vs || !ve) continue;
+    const overlapStart = vs < rangeStart ? rangeStart : vs;
+    const overlapEnd = ve > rangeEnd ? rangeEnd : ve;
+    if (overlapStart > overlapEnd) continue;
+    const cur = new Date(overlapStart);
+    while (cur <= overlapEnd) {
+      const dow = cur.getDay();
+      if (dow !== 0 && dow !== 6) days++; // Mon–Fri only
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+  return days;
+}
+
 // ─── PERSON HOURS ─────────────────────────────────────────────────────────────
 export interface BreakdownItem {
   proj: string;
@@ -108,14 +134,23 @@ export interface BreakdownItem {
 export interface HoursResult {
   total: number;
   breakdown: BreakdownItem[];
+  effectiveCapacity: number;
+  vacationDays: number;
 }
 
-export function personHoursInCol(personName: string, col: Date, mode: string): HoursResult {
+export function personHoursInCol(
+  personName: string,
+  col: Date,
+  mode: string,
+  projects: Project[],
+  vacations: Record<string, Vacation[]> = {}
+): HoursResult {
   const cs = col;
   const ce = colEnd(col, mode);
   const breakdown: BreakdownItem[] = [];
   let total = 0;
-  for (const proj of PROJECTS) {
+
+  for (const proj of projects) {
     for (const p of proj.personnel) {
       if (p.name !== personName) continue;
       if (!p.subStart) {
@@ -131,13 +166,18 @@ export function personHoursInCol(personName: string, col: Date, mode: string): H
       }
     }
   }
-  return { total, breakdown };
+
+  const vacationDays = getVacationDaysInRange(personName, cs, ce, vacations);
+  const effectiveCapacity = Math.max(0, CAPACITY - vacationDays * 8);
+
+  return { total, breakdown, effectiveCapacity, vacationDays };
 }
 
 // ─── DONUT SVG ────────────────────────────────────────────────────────────────
 export function makeDonut(total: number, breakdown: BreakdownItem[], capacity: number): string {
   const R = 18, cx = 22, cy = 22, circ = 2 * Math.PI * R;
-  const pct = Math.min(total / capacity, 1);
+  const effectiveCap = Math.max(capacity, 1);
+  const pct = Math.min(total / effectiveCap, 1);
   let svgParts = '';
   svgParts += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#e5e7eb" stroke-width="5"/>`;
 
@@ -150,7 +190,7 @@ export function makeDonut(total: number, breakdown: BreakdownItem[], capacity: n
     } else {
       let offset = circ * 0.25;
       for (let i = 0; i < breakdown.length; i++) {
-        const segPct = Math.min(breakdown[i].hours / capacity, 1);
+        const segPct = Math.min(breakdown[i].hours / effectiveCap, 1);
         const dash = circ * segPct;
         const color = projColorMap[breakdown[i].projId] || PROJ_COLORS[i % PROJ_COLORS.length];
         svgParts += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${color}" stroke-width="5"
@@ -167,8 +207,8 @@ export function makeDonut(total: number, breakdown: BreakdownItem[], capacity: n
   return `<svg width="44" height="44" viewBox="0 0 44 44">${svgParts}</svg>`;
 }
 
-// ─── PROJECT ACTUAL HOURS ────────────────────────────────────────────────────
-export function projActual(proj: typeof PROJECTS[0]): Record<string, number> {
+// ─── PROJECT ACTUAL HOURS ─────────────────────────────────────────────────────
+export function projActual(proj: Project): Record<string, number> {
   const a: Record<string, number> = { Developer: 0, PM: 0, Designer: 0 };
   for (const p of proj.personnel) a[p.role] = (a[p.role] || 0) + p.hours;
   return a;

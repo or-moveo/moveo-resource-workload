@@ -6,7 +6,10 @@ import { GanttView } from '@/components/GanttView';
 import { PersonnelView } from '@/components/PersonnelView';
 import { OverviewView } from '@/components/OverviewView';
 import { GuideModal } from '@/components/GuideModal';
-import { PROJECTS, PERSONNEL, projColorMap } from '@/data';
+import { PersonDetailModal } from '@/components/PersonDetailModal';
+import { ProjectDetailModal } from '@/components/ProjectDetailModal';
+import { AppProvider, useAppState } from '@/store/AppContext';
+import { projColorMap } from '@/data';
 import { sow, som, soq, addDays, getCols, colEnd, colLabel, fmtShort, fmtMon, personHoursInCol } from '@/utils';
 
 const TODAY = new Date(2026, 2, 22);
@@ -20,11 +23,17 @@ const TABS = [
 
 type TabValue = typeof TABS[number]['value'];
 
-export default function App() {
+function Dashboard() {
+  const { projects, personnel, vacations } = useAppState();
+
   const [mode, setMode] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
   const [anchor, setAnchor] = useState<Date>(sow(TODAY));
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [guideOpen, setGuideOpen] = useState(false);
+
+  // Modal state
+  const [selectedPersonName, setSelectedPersonName] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const cols = useMemo(() => getCols(anchor, mode, mode === 'quarterly' ? 6 : NCOLS), [anchor, mode]);
 
@@ -92,8 +101,8 @@ export default function App() {
     // Personnel tab
     const activeProjs = new Set<string>();
     for (const col of cols) {
-      for (const p of PERSONNEL) {
-        const { breakdown } = personHoursInCol(p.name, col, mode);
+      for (const p of personnel) {
+        const { breakdown } = personHoursInCol(p.name, col, mode, projects, vacations);
         breakdown.forEach(b => activeProjs.add(b.projId));
       }
     }
@@ -101,9 +110,9 @@ export default function App() {
       <div className="flex items-center gap-3 overflow-hidden">
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-urbanist flex-shrink-0">Projects</span>
         <div className="flex items-center gap-3 overflow-x-auto">
-          {PROJECTS.filter(p => activeProjs.has(p.id)).map(p => (
+          {projects.filter(p => activeProjs.has(p.id)).map(p => (
             <div key={p.id} className="flex items-center gap-1.5 flex-shrink-0">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: projColorMap[p.id] }} />
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: projColorMap[p.id] || '#64748b' }} />
               <span className="text-xs text-slate-500 whitespace-nowrap">{p.name}</span>
             </div>
           ))}
@@ -120,26 +129,19 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--moveo-bg)' }}>
 
-      {/* ── Unified Header: Logo · Tabs · Controls ── */}
+      {/* ── Header ── */}
       <header
         className="bg-white border-b border-slate-200 flex-shrink-0"
         style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.06)', minHeight: '48px' }}
       >
         <div className="flex items-stretch h-12">
 
-          {/* Left zone: Brand */}
+          {/* Brand */}
           <div className="flex items-center gap-2.5 px-4 border-r border-slate-100 min-w-[200px]">
-            <img
-              src="/mai-logo.png"
-              alt="M.ai"
-              className="h-7 w-auto flex-shrink-0 object-contain"
-            />
+            <img src="/mai-logo.png" alt="M.ai" className="h-7 w-auto flex-shrink-0 object-contain" />
             <div className="w-px h-5 bg-slate-200 flex-shrink-0" />
             <div>
-              <div
-                className="text-[13px] font-bold leading-none tracking-tight font-urbanist"
-                style={{ color: 'var(--moveo-navy)' }}
-              >
+              <div className="text-[13px] font-bold leading-none tracking-tight font-urbanist" style={{ color: 'var(--moveo-navy)' }}>
                 Management Dashboard
               </div>
               <div className="text-[10px] text-slate-400 leading-none mt-0.5">
@@ -148,7 +150,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Center zone: Tabs */}
+          {/* Tabs */}
           <nav className="flex items-stretch flex-1 justify-center">
             {TABS.map(({ value, icon: Icon, label }) => (
               <button
@@ -157,44 +159,27 @@ export default function App() {
                 className={`
                   relative flex items-center gap-1.5 px-5 text-[13px] font-semibold font-urbanist
                   transition-all duration-150 border-b-2 outline-none
-                  ${activeTab === value
-                    ? 'border-b-2 text-slate-900'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'}
+                  ${activeTab === value ? 'border-b-2 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}
                 `}
-                style={activeTab === value
-                  ? { borderBottomColor: 'var(--moveo-navy)', color: 'var(--moveo-navy)' }
-                  : {}}
+                style={activeTab === value ? { borderBottomColor: 'var(--moveo-navy)', color: 'var(--moveo-navy)' } : {}}
               >
-                <Icon
-                  className="h-3.5 w-3.5"
-                  style={activeTab === value ? { color: 'var(--moveo-navy)' } : {}}
-                />
+                <Icon className="h-3.5 w-3.5" style={activeTab === value ? { color: 'var(--moveo-navy)' } : {}} />
                 {label}
               </button>
             ))}
           </nav>
 
-          {/* Right zone: Period controls */}
+          {/* Period controls */}
           <div className="flex items-center gap-1.5 px-3 border-l border-slate-100 min-w-[200px] justify-end">
             {activeTab !== 'overview' ? (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={goBack}
-                  className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700"
-                >
+                <Button variant="ghost" size="sm" onClick={goBack} className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700">
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
                 <div className="text-[11px] font-semibold text-slate-600 font-urbanist min-w-[148px] text-center tabular-nums">
                   {periodLabel}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={goForward}
-                  className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700"
-                >
+                <Button variant="ghost" size="sm" onClick={goForward} className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700">
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
                 <button
@@ -223,9 +208,7 @@ export default function App() {
                 </div>
               </>
             ) : (
-              <span className="text-[11px] text-slate-400 font-urbanist">
-                Current week
-              </span>
+              <span className="text-[11px] text-slate-400 font-urbanist">Current week</span>
             )}
           </div>
 
@@ -235,22 +218,40 @@ export default function App() {
       {/* ── Tab content ── */}
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== 'projects' ? 'hidden' : ''}`}>
-          <GanttView cols={cols} mode={mode} />
+          <GanttView
+            cols={cols}
+            mode={mode}
+            projects={projects}
+            onProjectClick={setSelectedProjectId}
+          />
         </div>
         <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== 'personnel' ? 'hidden' : ''}`}>
-          <PersonnelView cols={cols} mode={mode} />
+          <PersonnelView
+            cols={cols}
+            mode={mode}
+            personnel={personnel}
+            projects={projects}
+            vacations={vacations}
+            onPersonClick={setSelectedPersonName}
+          />
         </div>
         <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== 'overview' ? 'hidden' : ''}`}>
-          <OverviewView />
+          <OverviewView
+            projects={projects}
+            personnel={personnel}
+            vacations={vacations}
+            onProjectClick={setSelectedProjectId}
+            onPersonClick={setSelectedPersonName}
+          />
         </div>
       </div>
 
-      {/* ── Legend footer ── */}
+      {/* ── Footer legend ── */}
       <footer className="bg-white border-t border-slate-200 px-5 py-2 flex items-center gap-4 flex-shrink-0">
         <Legend />
       </footer>
 
-      {/* ── Info button (fixed bottom-right) ── */}
+      {/* ── Info button ── */}
       <button
         onClick={() => setGuideOpen(true)}
         title="Data Guide"
@@ -261,6 +262,25 @@ export default function App() {
       </button>
 
       <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+      <PersonDetailModal
+        personName={selectedPersonName}
+        onClose={() => setSelectedPersonName(null)}
+        onProjectClick={id => { setSelectedPersonName(null); setSelectedProjectId(id); }}
+      />
+      <ProjectDetailModal
+        projectId={selectedProjectId}
+        onClose={() => setSelectedProjectId(null)}
+        onPersonClick={name => { setSelectedProjectId(null); setSelectedPersonName(name); }}
+      />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AppProvider>
+      <Dashboard />
+    </AppProvider>
   );
 }
