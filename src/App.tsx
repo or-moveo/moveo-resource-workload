@@ -47,6 +47,12 @@ export default function App() {
     else setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 4, 1));
   }
 
+  function goToday() {
+    if (mode === 'weekly') setAnchor(sow(TODAY));
+    else if (mode === 'quarterly') setAnchor(soq(TODAY));
+    else setAnchor(som(TODAY));
+  }
+
   const Legend = () => {
     if (activeTab === 'overview') {
       return (
@@ -191,6 +197,12 @@ export default function App() {
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
+                <button
+                  onClick={goToday}
+                  className="h-7 px-2.5 rounded-lg border border-slate-200 text-[11px] font-semibold font-urbanist text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-all duration-150 ml-1"
+                >
+                  Today
+                </button>
                 <div className="flex border border-slate-200 rounded-lg overflow-hidden ml-1">
                   {(['weekly', 'monthly', 'quarterly'] as const).map(m => (
                     <button

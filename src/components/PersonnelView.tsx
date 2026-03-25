@@ -6,6 +6,12 @@ import { personHoursInCol, makeDonut, fmtShort, colEnd, isToday, colLabel } from
 const TODAY = new Date(2026, 2, 22);
 
 // ── Holiday helpers ────────────────────────────────────────────────────────────
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+}
+
 function getColHolidays(col: Date, mode: string): Holiday[] {
   const end = colEnd(col, mode);
   return HOLIDAYS.filter(h => {
@@ -146,7 +152,7 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                     {hols.slice(0, 2).map((h, j) => (
                       <div key={j} className="flex items-center gap-[3px] rounded px-1" style={{ background: h.closed ? '#fee2e2' : '#fef9c3' }}>
                         <span style={{ fontSize: 7, fontWeight: 800, color: h.closed ? '#dc2626' : '#d97706', flexShrink: 0 }}>{h.closed ? '✕' : '◎'}</span>
-                        <span style={{ fontSize: 7, fontWeight: 600, color: h.closed ? '#dc2626' : '#d97706', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.nameEn}</span>
+                        <span style={{ fontSize: 7, fontWeight: 600, color: h.closed ? '#dc2626' : '#d97706', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtDay(h.date)} · {h.nameEn}</span>
                       </div>
                     ))}
                     {hols.length > 2 && <div className="text-center" style={{ fontSize: 7, color: '#94a3b8' }}>+{hols.length - 2} more</div>}
@@ -161,6 +167,7 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                       {getColHolidays(col, mode).map((h, j) => (
                         <div key={j} className="flex items-center gap-2">
                           <span style={{ fontSize: 9, fontWeight: 800, color: h.closed ? '#f87171' : '#fbbf24' }}>{h.closed ? '✕' : '◎'}</span>
+                          <span className="text-[10px] text-slate-400 tabular-nums flex-shrink-0">{fmtDay(h.date)}</span>
                           <span className="text-xs flex-1">{h.name}</span>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: h.closed ? '#dc262620' : '#d9780620', color: h.closed ? '#f87171' : '#fbbf24' }}>
                             {h.closed ? 'Closed' : 'Open'}

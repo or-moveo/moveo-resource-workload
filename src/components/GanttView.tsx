@@ -9,6 +9,12 @@ const TODAY = new Date(2026, 2, 22);
 const ROLES = ['Developer', 'PM', 'Designer'] as const;
 
 // ── Holiday helpers ────────────────────────────────────────────────────────────
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+}
+
 function getColHolidays(col: Date, mode: string): Holiday[] {
   const end = colEnd(col, mode);
   return HOLIDAYS.filter(h => {
@@ -169,7 +175,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                           {h.closed ? '✕' : '◎'}
                         </span>
                         <span style={{ fontSize: 7, fontWeight: 600, color: h.closed ? '#dc2626' : '#d97706', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {h.nameEn}
+                          {fmtDay(h.date)} · {h.nameEn}
                         </span>
                       </div>
                     ))}
@@ -189,6 +195,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                           <span style={{ fontSize: 9, fontWeight: 800, color: h.closed ? '#f87171' : '#fbbf24' }}>
                             {h.closed ? '✕' : '◎'}
                           </span>
+                          <span className="text-[10px] text-slate-400 tabular-nums flex-shrink-0">{fmtDay(h.date)}</span>
                           <span className="text-xs flex-1">{h.name}</span>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: h.closed ? '#dc262620' : '#d9780620', color: h.closed ? '#f87171' : '#fbbf24' }}>
                             {h.closed ? 'Closed' : 'Open'}
