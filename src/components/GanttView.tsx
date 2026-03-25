@@ -1,3 +1,4 @@
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PROJECTS, ROLE_COLOR, STATUS_COLOR, HOLIDAYS, type Project, type Holiday } from '@/data';
@@ -202,7 +203,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
           })}
 
           {sections.map(sec => (
-            <>
+            <React.Fragment key={sec.label}>
               {/* Section header */}
               <div
                 key={`sh-${sec.label}`}
@@ -221,7 +222,7 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                 const unassigned = proj.personnel.length === 0;
 
                 return (
-                  <>
+                  <React.Fragment key={proj.id}>
                     {/* Label cell */}
                     <div
                       key={`lbl-${proj.id}`}
@@ -292,10 +293,10 @@ export function GanttView({ cols, mode }: GanttViewProps) {
                         </Tooltip>
                       );
                     })}
-                  </>
+                  </React.Fragment>
                 );
               })}
-            </>
+            </React.Fragment>
           ))}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PERSONNEL, projColorMap, CAPACITY, HOLIDAYS, type Holiday } from '@/data';
 import { personHoursInCol, makeDonut, fmtShort, colEnd, isToday, colLabel } from '@/utils';
@@ -179,7 +180,7 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
             const { border: rowBorderColor, rowBg } = getRowAccent(maxUtil);
 
             return (
-              <>
+              <React.Fragment key={person.name}>
                 {/* Person label cell */}
                 <div
                   key={`lbl-${person.name}`}
@@ -256,7 +257,7 @@ export function PersonnelView({ cols, mode }: PersonnelViewProps) {
                     </Tooltip>
                   );
                 })}
-              </>
+              </React.Fragment>
             );
           })}
         </div>
