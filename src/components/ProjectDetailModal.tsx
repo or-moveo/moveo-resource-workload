@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,7 +113,8 @@ export function ProjectDetailModal({ projectId, onClose, onPersonClick }: Projec
 
   return (
     <Dialog open={!!projectId} onOpenChange={open => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden gap-0" style={{ borderRadius: 16 }}>
+      <DialogContent className="max-w-2xl p-0 overflow-hidden gap-0" style={{ borderRadius: 16 }} aria-describedby={undefined}>
+        <DialogTitle className="sr-only">{draft?.name ?? 'Project Details'}</DialogTitle>
 
         {/* ── Header ── */}
         <div className="px-6 pt-6 pb-5 border-b border-slate-100" style={{ background: 'var(--moveo-navy)' }}>
