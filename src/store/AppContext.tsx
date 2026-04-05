@@ -5,6 +5,7 @@ import {
   type Project,
   type Person,
   type Vacation,
+  type PersonnelEntry,
 } from '@/data';
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -22,6 +23,9 @@ export type Action =
   | { type: 'ADD_VACATION'; personName: string; vacation: Vacation }
   | { type: 'REMOVE_VACATION'; personName: string; vacationId: string }
   | { type: 'UPDATE_VACATION'; personName: string; vacation: Vacation }
+  // Monday-sync-ready assignment actions — interceptable by future sync middleware
+  | { type: 'ASSIGN_PERSON'; projectId: string; entry: PersonnelEntry }
+  | { type: 'UNASSIGN_PERSON'; projectId: string; personName: string }
   | { type: 'RESET' };
 
 // ── Reducer ───────────────────────────────────────────────────────────────────
@@ -36,6 +40,24 @@ function reducer(state: AppState, action: Action): AppState {
       };
     case 'DELETE_PROJECT':
       return { ...state, projects: state.projects.filter(p => p.id !== action.id) };
+    case 'ASSIGN_PERSON':
+      return {
+        ...state,
+        projects: state.projects.map(p =>
+          p.id === action.projectId
+            ? { ...p, personnel: [...p.personnel, action.entry] }
+            : p
+        ),
+      };
+    case 'UNASSIGN_PERSON':
+      return {
+        ...state,
+        projects: state.projects.map(p =>
+          p.id === action.projectId
+            ? { ...p, personnel: p.personnel.filter(e => e.name !== action.personName) }
+            : p
+        ),
+      };
     case 'UPDATE_PERSON':
       return {
         ...state,
@@ -82,7 +104,7 @@ function reducer(state: AppState, action: Action): AppState {
 }
 
 // ── localStorage ──────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'moveo-rw-state';
+const STORAGE_KEY = 'moveo-rw-state-v2'; // v2: Monday IDs, ASSIGN/UNASSIGN actions, 8-person roster
 
 function getInitialState(): AppState {
   try {
